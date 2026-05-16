@@ -1,0 +1,859 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>ForemanOS</title>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <style>
+    :root {
+      --bg: #0f1117;
+      --surface: #1a1d27;
+      --border: #2a2d3a;
+      --accent: #f97316;
+      --accent2: #3b82f6;
+      --text: #e2e8f0;
+      --muted: #64748b;
+      --danger: #ef4444;
+      --success: #22c55e;
+      --radius: 12px;
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body { background: var(--bg); color: var(--text); font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; min-height: 100vh; }
+    #app { max-width: 480px; margin: 0 auto; padding: 0 0 80px; }
+
+    /* NAV */
+    nav { background: var(--surface); border-bottom: 1px solid var(--border); padding: 14px 20px; display: flex; align-items: center; justify-content: space-between; position: sticky; top: 0; z-index: 100; }
+    .nav-logo { font-size: 1.1rem; font-weight: 700; color: var(--accent); letter-spacing: 0.04em; }
+    .nav-role { font-size: 0.75rem; color: var(--muted); background: var(--border); padding: 3px 10px; border-radius: 99px; }
+
+    /* SCREENS */
+    .screen { display: none; padding: 24px 20px; }
+    .screen.active { display: block; }
+
+    /* BOTTOM NAV */
+    .bottom-nav { position: fixed; bottom: 0; left: 0; right: 0; background: var(--surface); border-top: 1px solid var(--border); display: flex; justify-content: space-around; padding: 10px 0 14px; z-index: 100; }
+    .bottom-nav.hidden { display: none; }
+    .bnav-btn { background: none; border: none; color: var(--muted); font-size: 0.7rem; display: flex; flex-direction: column; align-items: center; gap: 4px; cursor: pointer; padding: 4px 14px; border-radius: 8px; transition: color 0.15s; }
+    .bnav-btn.active { color: var(--accent); }
+    .bnav-btn svg { width: 22px; height: 22px; }
+
+    /* CARDS */
+    .card { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 20px; margin-bottom: 16px; }
+    .card-title { font-size: 0.75rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.08em; color: var(--muted); margin-bottom: 12px; }
+
+    /* HEADINGS */
+    h1 { font-size: 1.6rem; font-weight: 700; margin-bottom: 6px; }
+    h2 { font-size: 1.15rem; font-weight: 600; margin-bottom: 16px; }
+    p.sub { color: var(--muted); font-size: 0.9rem; margin-bottom: 24px; line-height: 1.5; }
+
+    /* FORMS */
+    label { display: block; font-size: 0.8rem; font-weight: 600; color: var(--muted); margin-bottom: 6px; text-transform: uppercase; letter-spacing: 0.05em; }
+    input, textarea, select { width: 100%; background: var(--bg); border: 1px solid var(--border); border-radius: 8px; color: var(--text); font-size: 0.95rem; padding: 12px 14px; margin-bottom: 16px; outline: none; font-family: inherit; transition: border-color 0.15s; }
+    input:focus, textarea:focus, select:focus { border-color: var(--accent); }
+    textarea { resize: vertical; min-height: 90px; }
+    select option { background: var(--surface); }
+
+    /* BUTTONS */
+    .btn { display: block; width: 100%; padding: 14px; border-radius: 10px; font-size: 0.95rem; font-weight: 600; cursor: pointer; border: none; transition: opacity 0.15s, transform 0.1s; text-align: center; }
+    .btn:active { transform: scale(0.98); }
+    .btn-primary { background: var(--accent); color: #fff; }
+    .btn-secondary { background: var(--border); color: var(--text); }
+    .btn-blue { background: var(--accent2); color: #fff; }
+    .btn:disabled { opacity: 0.45; cursor: not-allowed; }
+    .btn-sm { width: auto; display: inline-block; padding: 8px 16px; font-size: 0.82rem; }
+    .btn-row { display: flex; gap: 10px; margin-bottom: 16px; }
+
+    /* TRADE PILLS */
+    .trade-pills { display: flex; gap: 10px; flex-wrap: wrap; margin-bottom: 20px; }
+    .trade-pill { flex: 1; min-width: 80px; padding: 12px 8px; border-radius: 10px; border: 2px solid var(--border); background: var(--surface); color: var(--muted); font-size: 0.82rem; font-weight: 600; text-align: center; cursor: pointer; transition: all 0.15s; }
+    .trade-pill.selected { border-color: var(--accent); color: var(--accent); background: rgba(249,115,22,0.08); }
+
+    /* URGENCY PILLS */
+    .urgency-pills { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 20px; }
+    .urgency-pill { flex: 1; min-width: 70px; padding: 10px 6px; border-radius: 8px; border: 2px solid var(--border); background: var(--surface); color: var(--muted); font-size: 0.78rem; font-weight: 600; text-align: center; cursor: pointer; transition: all 0.15s; }
+    .urgency-pill.selected { border-color: var(--accent2); color: var(--accent2); background: rgba(59,130,246,0.08); }
+
+    /* PHOTO UPLOAD */
+    .photo-upload-area { border: 2px dashed var(--border); border-radius: var(--radius); padding: 32px 20px; text-align: center; cursor: pointer; transition: border-color 0.15s; margin-bottom: 16px; position: relative; }
+    .photo-upload-area:hover, .photo-upload-area.drag { border-color: var(--accent); }
+    .photo-upload-area input[type=file] { position: absolute; inset: 0; opacity: 0; cursor: pointer; }
+    .photo-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; margin-bottom: 16px; }
+    .photo-thumb { aspect-ratio: 1; border-radius: 8px; object-fit: cover; width: 100%; }
+    .photo-thumb-wrap { position: relative; }
+    .photo-remove { position: absolute; top: 4px; right: 4px; background: rgba(0,0,0,0.7); border: none; color: #fff; border-radius: 99px; width: 22px; height: 22px; font-size: 13px; cursor: pointer; display: flex; align-items: center; justify-content: center; }
+
+    /* STEPS */
+    .steps { display: flex; align-items: center; gap: 0; margin-bottom: 28px; }
+    .step { flex: 1; text-align: center; font-size: 0.7rem; color: var(--muted); position: relative; }
+    .step-dot { width: 28px; height: 28px; border-radius: 99px; border: 2px solid var(--border); background: var(--bg); display: flex; align-items: center; justify-content: center; margin: 0 auto 4px; font-size: 0.75rem; font-weight: 700; color: var(--muted); }
+    .step.done .step-dot { background: var(--success); border-color: var(--success); color: #fff; }
+    .step.active .step-dot { border-color: var(--accent); color: var(--accent); }
+    .step-line { height: 2px; background: var(--border); flex: 1; margin-bottom: 20px; }
+    .step-line.done { background: var(--success); }
+
+    /* STATUS BADGE */
+    .badge { display: inline-block; padding: 3px 10px; border-radius: 99px; font-size: 0.72rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.05em; }
+    .badge-new { background: rgba(59,130,246,0.15); color: var(--accent2); }
+    .badge-scheduled { background: rgba(249,115,22,0.15); color: var(--accent); }
+    .badge-complete { background: rgba(34,197,94,0.15); color: var(--success); }
+    .badge-urgent { background: rgba(239,68,68,0.15); color: var(--danger); }
+
+    /* WO CARD */
+    .wo-card { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 16px; margin-bottom: 12px; cursor: pointer; transition: border-color 0.15s; }
+    .wo-card:hover { border-color: var(--accent2); }
+    .wo-meta { display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; }
+    .wo-addr { font-size: 0.95rem; font-weight: 600; margin-bottom: 4px; }
+    .wo-trade { font-size: 0.78rem; color: var(--muted); }
+    .wo-detail { font-size: 0.85rem; color: var(--muted); margin-top: 8px; line-height: 1.4; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+
+    /* DETAIL VIEW */
+    .detail-header { margin-bottom: 20px; }
+    .detail-section { margin-bottom: 20px; }
+    .detail-section h3 { font-size: 0.78rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.08em; color: var(--muted); margin-bottom: 10px; }
+    .detail-row { display: flex; justify-content: space-between; padding: 8px 0; border-bottom: 1px solid var(--border); font-size: 0.88rem; }
+    .detail-row:last-child { border-bottom: none; }
+    .detail-key { color: var(--muted); }
+    .detail-val { font-weight: 500; text-align: right; max-width: 60%; }
+
+    /* TOAST */
+    #toast { position: fixed; bottom: 90px; left: 50%; transform: translateX(-50%) translateY(20px); background: var(--surface); border: 1px solid var(--border); color: var(--text); padding: 12px 20px; border-radius: 10px; font-size: 0.88rem; opacity: 0; transition: all 0.25s; z-index: 999; white-space: nowrap; pointer-events: none; }
+    #toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+    #toast.error { border-color: var(--danger); color: var(--danger); }
+    #toast.success { border-color: var(--success); color: var(--success); }
+
+    /* LOADING */
+    .spinner { width: 22px; height: 22px; border: 3px solid var(--border); border-top-color: var(--accent); border-radius: 50%; animation: spin 0.7s linear infinite; display: inline-block; vertical-align: middle; margin-right: 8px; }
+    @keyframes spin { to { transform: rotate(360deg); } }
+    .loading-overlay { display: flex; align-items: center; justify-content: center; padding: 60px 20px; }
+    .empty-state { text-align: center; padding: 60px 20px; color: var(--muted); }
+    .empty-state svg { width: 48px; height: 48px; margin: 0 auto 16px; opacity: 0.4; display: block; }
+
+    /* AUTH */
+    .auth-wrap { min-height: 100vh; display: flex; flex-direction: column; justify-content: center; padding: 40px 24px; max-width: 400px; margin: 0 auto; }
+    .auth-logo { font-size: 2rem; font-weight: 800; color: var(--accent); letter-spacing: 0.05em; margin-bottom: 8px; }
+    .auth-tagline { color: var(--muted); font-size: 0.92rem; margin-bottom: 40px; line-height: 1.5; }
+    .tab-row { display: flex; gap: 0; border: 1px solid var(--border); border-radius: 10px; margin-bottom: 24px; overflow: hidden; }
+    .tab-btn { flex: 1; padding: 11px; background: none; border: none; color: var(--muted); font-size: 0.88rem; font-weight: 600; cursor: pointer; transition: all 0.15s; }
+    .tab-btn.active { background: var(--accent); color: #fff; }
+    .divider { text-align: center; color: var(--muted); font-size: 0.8rem; margin: 16px 0; position: relative; }
+    .divider::before, .divider::after { content: ''; position: absolute; top: 50%; width: 42%; height: 1px; background: var(--border); }
+    .divider::before { left: 0; }
+    .divider::after { right: 0; }
+
+    /* INTAKE CONFIRM */
+    .confirm-box { background: rgba(34,197,94,0.07); border: 1px solid rgba(34,197,94,0.25); border-radius: var(--radius); padding: 24px; text-align: center; margin-bottom: 20px; }
+    .confirm-icon { font-size: 2.5rem; margin-bottom: 8px; }
+    .confirm-box h2 { color: var(--success); margin-bottom: 8px; }
+    .confirm-box p { color: var(--muted); font-size: 0.88rem; line-height: 1.5; }
+  </style>
+</head>
+<body>
+<div id="app">
+  <nav>
+    <span class="nav-logo">ForemanOS</span>
+    <span class="nav-role" id="navRole">Loading…</span>
+  </nav>
+
+  <!-- AUTH SCREEN -->
+  <div id="screenAuth" style="display:none; padding:0;">
+    <div class="auth-wrap">
+      <div class="auth-logo">ForemanOS</div>
+      <p class="auth-tagline">Intelligent dispatch & diagnostics for independent trade contractors.</p>
+      <div class="tab-row">
+        <button class="tab-btn active" id="tabStaff" onclick="switchAuthTab('staff')">Staff Login</button>
+        <button class="tab-btn" id="tabClient" onclick="switchAuthTab('client')">Client Intake</button>
+      </div>
+      <div id="authStaffForm">
+        <label>Email</label>
+        <input type="email" id="authEmail" placeholder="you@example.com" />
+        <button class="btn btn-primary" id="btnMagicLink" onclick="sendMagicLink()">Send Magic Link</button>
+        <div class="divider">or</div>
+        <label>Password</label>
+        <input type="password" id="authPassword" placeholder="••••••••" />
+        <div class="btn-row">
+          <button class="btn btn-secondary" onclick="signIn()">Sign In</button>
+          <button class="btn btn-blue" onclick="signUp()">Sign Up</button>
+        </div>
+      </div>
+      <div id="authClientForm" style="display:none;">
+        <p style="color:var(--muted);font-size:0.88rem;margin-bottom:20px;line-height:1.5;">No account needed. We'll create a temporary session so you can describe your issue and upload photos.</p>
+        <button class="btn btn-primary" onclick="startAnonIntake()">Start Intake →</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- INTAKE SCREEN -->
+  <div id="screenIntake" class="screen">
+    <div class="steps" id="intakeSteps">
+      <div class="step active" id="step1"><div class="step-dot">1</div><span>Trade</span></div>
+      <div class="step-line" id="line12"></div>
+      <div class="step" id="step2"><div class="step-dot">2</div><span>Issue</span></div>
+      <div class="step-line" id="line23"></div>
+      <div class="step" id="step3"><div class="step-dot">3</div><span>Photos</span></div>
+      <div class="step-line" id="line34"></div>
+      <div class="step" id="step4"><div class="step-dot">4</div><span>Submit</span></div>
+    </div>
+
+    <!-- Step 1: Trade -->
+    <div id="intakeStep1">
+      <h2>What type of issue?</h2>
+      <div class="trade-pills">
+        <div class="trade-pill" data-trade="plumbing" onclick="selectTrade(this)">🔧 Plumbing</div>
+        <div class="trade-pill" data-trade="electrical" onclick="selectTrade(this)">⚡ Electrical</div>
+        <div class="trade-pill" data-trade="hvac" onclick="selectTrade(this)">❄️ HVAC</div>
+        <div class="trade-pill" data-trade="multi" onclick="selectTrade(this)">🛠 Multiple</div>
+      </div>
+      <label>Your Name</label>
+      <input type="text" id="intakeName" placeholder="Jane Smith" />
+      <label>Phone Number</label>
+      <input type="tel" id="intakePhone" placeholder="(207) 555-0123" />
+      <label>Email (optional)</label>
+      <input type="email" id="intakeEmail" placeholder="jane@example.com" />
+      <label>Property Address</label>
+      <input type="text" id="intakeAddress" placeholder="123 Main St, Naples, ME 04055" />
+      <button class="btn btn-primary" onclick="intakeNext(1)">Next →</button>
+    </div>
+
+    <!-- Step 2: Issue Description -->
+    <div id="intakeStep2" style="display:none;">
+      <h2>Describe the issue</h2>
+      <label>What's happening?</label>
+      <textarea id="intakeDesc" placeholder="e.g. Water is dripping from under the kitchen sink, noticed a dark stain on the cabinet floor…"></textarea>
+      <label>How urgent is this?</label>
+      <div class="urgency-pills">
+        <div class="urgency-pill" data-urgency="emergency" onclick="selectUrgency(this)">🚨 Emergency</div>
+        <div class="urgency-pill" data-urgency="urgent" onclick="selectUrgency(this)">⚠️ Urgent</div>
+        <div class="urgency-pill" data-urgency="routine" onclick="selectUrgency(this)">📅 Routine</div>
+        <div class="urgency-pill" data-urgency="planning" onclick="selectUrgency(this)">💡 Planning</div>
+      </div>
+      <div class="btn-row">
+        <button class="btn btn-secondary" onclick="intakeBack(2)">← Back</button>
+        <button class="btn btn-primary" onclick="intakeNext(2)">Next →</button>
+      </div>
+    </div>
+
+    <!-- Step 3: Photos -->
+    <div id="intakeStep3" style="display:none;">
+      <h2>Upload photos</h2>
+      <p class="sub">Photos help our technicians prepare before arriving. The more context, the better.</p>
+      <div class="photo-upload-area" id="photoDropZone">
+        <input type="file" accept="image/*" multiple id="photoFileInput" onchange="handlePhotoSelect(event)" />
+        <div style="pointer-events:none;">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" style="width:36px;height:36px;margin:0 auto 8px;display:block;color:var(--muted);"><path d="M12 16v-8m0 0-3 3m3-3 3 3M20 21H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2Z" stroke-linecap="round" stroke-linejoin="round"/></svg>
+          <p style="color:var(--muted);font-size:0.88rem;">Tap to add photos or drag &amp; drop</p>
+          <p style="color:var(--muted);font-size:0.75rem;margin-top:4px;">JPEG, PNG, HEIC — up to 10MB each</p>
+        </div>
+      </div>
+      <div class="photo-grid" id="photoGrid"></div>
+      <div class="btn-row">
+        <button class="btn btn-secondary" onclick="intakeBack(3)">← Back</button>
+        <button class="btn btn-primary" onclick="intakeNext(3)">Next →</button>
+      </div>
+    </div>
+
+    <!-- Step 4: Confirm & Submit -->
+    <div id="intakeStep4" style="display:none;">
+      <h2>Review &amp; Submit</h2>
+      <div class="card">
+        <div class="card-title">Intake Summary</div>
+        <div id="intakeSummaryContent"></div>
+      </div>
+      <div class="btn-row">
+        <button class="btn btn-secondary" onclick="intakeBack(4)">← Back</button>
+        <button class="btn btn-primary" id="btnSubmitIntake" onclick="submitIntake()">Submit Request</button>
+      </div>
+    </div>
+
+    <!-- Step 5: Done -->
+    <div id="intakeStep5" style="display:none;">
+      <div class="confirm-box">
+        <div class="confirm-icon">✅</div>
+        <h2>Request Submitted!</h2>
+        <p>We've received your request and will be in touch shortly. A technician briefing is being prepared.</p>
+      </div>
+      <p style="color:var(--muted);font-size:0.82rem;text-align:center;margin-bottom:20px;">Session ID: <span id="confirmSessionId" style="font-family:monospace;"></span></p>
+      <button class="btn btn-secondary" onclick="resetIntake()">Submit Another</button>
+    </div>
+  </div>
+
+  <!-- WORK ORDERS SCREEN -->
+  <div id="screenOrders" class="screen">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;">
+      <h2 style="margin:0;">Work Orders</h2>
+      <div style="display:flex;gap:8px;">
+        <select id="woFilterStatus" onchange="loadWorkOrders()" style="width:auto;margin:0;padding:7px 10px;font-size:0.8rem;">
+          <option value="">All</option>
+          <option value="new">New</option>
+          <option value="scheduled">Scheduled</option>
+          <option value="on_site">On Site</option>
+          <option value="complete">Complete</option>
+        </select>
+      </div>
+    </div>
+    <div id="woList"></div>
+  </div>
+
+  <!-- WO DETAIL SCREEN -->
+  <div id="screenWODetail" class="screen">
+    <button onclick="showScreen('screenOrders')" style="background:none;border:none;color:var(--accent2);font-size:0.88rem;cursor:pointer;margin-bottom:16px;">← Back to Orders</button>
+    <div id="woDetailContent"></div>
+  </div>
+
+  <!-- INTAKE QUEUE SCREEN (staff) -->
+  <div id="screenQueue" class="screen">
+    <h2>Intake Queue</h2>
+    <div id="queueList"></div>
+  </div>
+
+  <!-- PROFILE SCREEN -->
+  <div id="screenProfile" class="screen">
+    <h2>Profile</h2>
+    <div class="card" id="profileCard"></div>
+    <button class="btn btn-secondary" onclick="signOut()" style="margin-top:12px;">Sign Out</button>
+  </div>
+
+</div><!-- /#app -->
+
+<!-- BOTTOM NAV -->
+<nav class="bottom-nav hidden" id="bottomNav">
+  <button class="bnav-btn" id="bnav-intake" onclick="showScreen('screenIntake');setActiveNav('bnav-intake')">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M12 4v16m8-8H4" stroke-linecap="round"/></svg>
+    Intake
+  </button>
+  <button class="bnav-btn" id="bnav-orders" onclick="showScreen('screenOrders');loadWorkOrders();setActiveNav('bnav-orders')">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="3" y="3" width="18" height="18" rx="3"/><path d="M7 8h10M7 12h6M7 16h4" stroke-linecap="round"/></svg>
+    Orders
+  </button>
+  <button class="bnav-btn" id="bnav-queue" onclick="showScreen('screenQueue');loadQueue();setActiveNav('bnav-queue')">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M3 6h18M3 12h18M3 18h18" stroke-linecap="round"/></svg>
+    Queue
+  </button>
+  <button class="bnav-btn" id="bnav-profile" onclick="showScreen('screenProfile');loadProfile();setActiveNav('bnav-profile')">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="8" r="4"/><path d="M4 20c0-4 3.6-7 8-7s8 3 8 7" stroke-linecap="round"/></svg>
+    Profile
+  </button>
+</nav>
+
+<div id="toast"></div>
+
+<script>
+const SUPA_URL = 'https://pnsyuuonddgfqcmjiitf.supabase.co';
+const SUPA_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InBuc3l1dW9uZGRnZnFjbWppaXRmIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzg4ODIxNTEsImV4cCI6MjA5NDQ1ODE1MX0.AW8C16S3t8HhQs7XK_-yZsoK0lkRlTash5yTuM1dIsk';
+const { createClient } = supabase;
+const sb = createClient(SUPA_URL, SUPA_KEY);
+
+// ── STATE ─────────────────────────────────────────────────────────────────────
+let currentUser = null;
+let currentOrgId = null;
+let currentRole = 'guest';
+let intakeData = { trade: null, urgency: null, photos: [] };
+let currentWO = null;
+
+// ── INIT ──────────────────────────────────────────────────────────────────────
+async function init() {
+  const { data: { session } } = await sb.auth.getSession();
+  if (session) {
+    await onSignedIn(session.user);
+  } else {
+    showAuthScreen();
+  }
+  sb.auth.onAuthStateChange(async (event, session) => {
+    if (event === 'SIGNED_IN' && session) await onSignedIn(session.user);
+    if (event === 'SIGNED_OUT') showAuthScreen();
+  });
+}
+
+async function onSignedIn(user) {
+  currentUser = user;
+  const isAnon = user.is_anonymous;
+  if (isAnon) {
+    currentRole = 'client';
+    document.getElementById('navRole').textContent = 'Client';
+    document.getElementById('bottomNav').classList.add('hidden');
+    showScreen('screenIntake');
+    return;
+  }
+  // fetch profile
+  const { data: profile } = await sb.from('profiles').select('role, organization_id, full_name').eq('id', user.id).single();
+  if (profile) {
+    currentRole = profile.role || 'tech';
+    currentOrgId = profile.organization_id;
+    document.getElementById('navRole').textContent = profile.full_name || currentRole;
+  } else {
+    currentRole = 'tech';
+    document.getElementById('navRole').textContent = user.email?.split('@')[0] || 'Staff';
+  }
+  document.getElementById('bottomNav').classList.remove('hidden');
+  showScreen('screenOrders');
+  loadWorkOrders();
+  setActiveNav('bnav-orders');
+}
+
+function showAuthScreen() {
+  document.getElementById('screenAuth').style.display = '';
+  document.getElementById('bottomNav').classList.add('hidden');
+  document.getElementById('navRole').textContent = 'Sign In';
+  ['screenIntake','screenOrders','screenQueue','screenProfile','screenWODetail'].forEach(s => {
+    document.getElementById(s).classList.remove('active');
+  });
+}
+
+// ── AUTH ──────────────────────────────────────────────────────────────────────
+function switchAuthTab(tab) {
+  document.getElementById('tabStaff').classList.toggle('active', tab === 'staff');
+  document.getElementById('tabClient').classList.toggle('active', tab === 'client');
+  document.getElementById('authStaffForm').style.display = tab === 'staff' ? '' : 'none';
+  document.getElementById('authClientForm').style.display = tab === 'client' ? '' : 'none';
+}
+
+async function sendMagicLink() {
+  const email = document.getElementById('authEmail').value.trim();
+  if (!email) { toast('Enter your email', 'error'); return; }
+  const btn = document.getElementById('btnMagicLink');
+  btn.disabled = true; btn.textContent = 'Sending…';
+  const { error } = await sb.auth.signInWithOtp({ email, options: { emailRedirectTo: location.href } });
+  btn.disabled = false; btn.textContent = 'Send Magic Link';
+  if (error) toast(error.message, 'error');
+  else toast('✉️ Magic link sent — check your email', 'success');
+}
+
+async function signIn() {
+  const email = document.getElementById('authEmail').value.trim();
+  const password = document.getElementById('authPassword').value;
+  if (!email || !password) { toast('Enter email and password', 'error'); return; }
+  const { error } = await sb.auth.signInWithPassword({ email, password });
+  if (error) toast(error.message, 'error');
+}
+
+async function signUp() {
+  const email = document.getElementById('authEmail').value.trim();
+  const password = document.getElementById('authPassword').value;
+  if (!email || !password) { toast('Enter email and password', 'error'); return; }
+  const { error } = await sb.auth.signUp({ email, password });
+  if (error) toast(error.message, 'error');
+  else toast('Account created — check your email to confirm', 'success');
+}
+
+async function startAnonIntake() {
+  const { error } = await sb.auth.signInAnonymously();
+  if (error) toast(error.message, 'error');
+}
+
+async function signOut() {
+  await sb.auth.signOut();
+}
+
+// ── SCREEN ROUTING ────────────────────────────────────────────────────────────
+function showScreen(id) {
+  ['screenIntake','screenOrders','screenQueue','screenProfile','screenWODetail'].forEach(s => {
+    const el = document.getElementById(s);
+    el.classList.remove('active');
+  });
+  document.getElementById('screenAuth').style.display = 'none';
+  document.getElementById(id).classList.add('active');
+}
+
+function setActiveNav(id) {
+  document.querySelectorAll('.bnav-btn').forEach(b => b.classList.remove('active'));
+  document.getElementById(id)?.classList.add('active');
+}
+
+// ── INTAKE FLOW ───────────────────────────────────────────────────────────────
+function selectTrade(el) {
+  document.querySelectorAll('.trade-pill').forEach(p => p.classList.remove('selected'));
+  el.classList.add('selected');
+  intakeData.trade = el.dataset.trade;
+}
+
+function selectUrgency(el) {
+  document.querySelectorAll('.urgency-pill').forEach(p => p.classList.remove('selected'));
+  el.classList.add('selected');
+  intakeData.urgency = el.dataset.urgency;
+}
+
+function intakeNext(from) {
+  if (from === 1) {
+    if (!intakeData.trade) { toast('Select a trade type', 'error'); return; }
+    const name = document.getElementById('intakeName').value.trim();
+    if (!name) { toast('Enter your name', 'error'); return; }
+    intakeData.name = name;
+    intakeData.phone = document.getElementById('intakePhone').value.trim();
+    intakeData.email = document.getElementById('intakeEmail').value.trim();
+    intakeData.address = document.getElementById('intakeAddress').value.trim();
+    if (!intakeData.address) { toast('Enter the property address', 'error'); return; }
+  }
+  if (from === 2) {
+    const desc = document.getElementById('intakeDesc').value.trim();
+    if (!desc) { toast('Describe the issue', 'error'); return; }
+    intakeData.description = desc;
+    if (!intakeData.urgency) { toast('Select urgency level', 'error'); return; }
+  }
+  if (from === 3) {
+    // photos optional
+  }
+  if (from === 4) return;
+  const next = from + 1;
+  document.getElementById('intakeStep' + from).style.display = 'none';
+  document.getElementById('intakeStep' + next).style.display = '';
+  updateStepUI(next);
+  if (next === 4) renderIntakeSummary();
+}
+
+function intakeBack(from) {
+  document.getElementById('intakeStep' + from).style.display = 'none';
+  document.getElementById('intakeStep' + (from - 1)).style.display = '';
+  updateStepUI(from - 1);
+}
+
+function updateStepUI(current) {
+  for (let i = 1; i <= 4; i++) {
+    const el = document.getElementById('step' + i);
+    el.classList.remove('active', 'done');
+    if (i < current) el.classList.add('done');
+    if (i === current) el.classList.add('active');
+    const dot = el.querySelector('.step-dot');
+    dot.textContent = i < current ? '✓' : i;
+  }
+  for (let i = 1; i <= 3; i++) {
+    const line = document.getElementById('line' + i + (i + 1));
+    if (line) line.classList.toggle('done', i < current);
+  }
+}
+
+function renderIntakeSummary() {
+  const tradeLabels = { plumbing: '🔧 Plumbing', electrical: '⚡ Electrical', hvac: '❄️ HVAC', multi: '🛠 Multiple' };
+  const urgLabels = { emergency: '🚨 Emergency', urgent: '⚠️ Urgent', routine: '📅 Routine', planning: '💡 Planning' };
+  const rows = [
+    ['Name', intakeData.name],
+    ['Phone', intakeData.phone || '—'],
+    ['Address', intakeData.address],
+    ['Trade', tradeLabels[intakeData.trade] || intakeData.trade],
+    ['Urgency', urgLabels[intakeData.urgency] || intakeData.urgency],
+    ['Photos', intakeData.photos.length + ' attached'],
+    ['Description', intakeData.description],
+  ];
+  document.getElementById('intakeSummaryContent').innerHTML = rows.map(([k, v]) =>
+    `<div class="detail-row"><span class="detail-key">${k}</span><span class="detail-val">${v}</span></div>`
+  ).join('');
+}
+
+// Photos
+function handlePhotoSelect(e) {
+  const files = Array.from(e.target.files);
+  files.forEach(f => {
+    const reader = new FileReader();
+    reader.onload = ev => {
+      intakeData.photos.push({ file: f, dataUrl: ev.target.result });
+      renderPhotoGrid();
+    };
+    reader.readAsDataURL(f);
+  });
+  e.target.value = '';
+}
+
+function renderPhotoGrid() {
+  const grid = document.getElementById('photoGrid');
+  grid.innerHTML = intakeData.photos.map((p, i) =>
+    `<div class="photo-thumb-wrap">
+      <img src="${p.dataUrl}" class="photo-thumb" />
+      <button class="photo-remove" onclick="removePhoto(${i})">×</button>
+    </div>`
+  ).join('');
+}
+
+function removePhoto(i) {
+  intakeData.photos.splice(i, 1);
+  renderPhotoGrid();
+}
+
+async function submitIntake() {
+  const btn = document.getElementById('btnSubmitIntake');
+  btn.disabled = true;
+  btn.innerHTML = '<span class="spinner"></span>Submitting…';
+
+  try {
+    // Ensure we have an org — use a default/demo org if user is anon
+    // In production, org_id would come from the URL slug or user's org
+    let orgId = currentOrgId;
+    if (!orgId) {
+      // Try to get first org or create a placeholder
+      const { data: orgs } = await sb.from('organizations').select('id').limit(1);
+      if (orgs && orgs.length > 0) orgId = orgs[0].id;
+    }
+
+    if (!orgId) {
+      // Create a demo org for standalone intake
+      const { data: newOrg, error: orgErr } = await sb.from('organizations').insert({
+        name: 'Demo Organization',
+        slug: 'demo-' + Date.now(),
+        trade_type: intakeData.trade === 'multi' ? 'multi' : intakeData.trade
+      }).select('id').single();
+      if (orgErr) throw orgErr;
+      orgId = newOrg.id;
+    }
+
+    // Create intake session
+    const { data: session, error: sessErr } = await sb.from('intake_sessions').insert({
+      organization_id: orgId,
+      trade_type: intakeData.trade,
+      homeowner_name: intakeData.name,
+      homeowner_phone: intakeData.phone || null,
+      homeowner_email: intakeData.email || null,
+      homeowner_description: intakeData.description,
+      address_raw: intakeData.address,
+      urgency_self_reported: intakeData.urgency,
+      status: 'open'
+    }).select('id').single();
+    if (sessErr) throw sessErr;
+
+    const sessionId = session.id;
+
+    // Upload photos
+    for (let i = 0; i < intakeData.photos.length; i++) {
+      const p = intakeData.photos[i];
+      const ext = p.file.name.split('.').pop() || 'jpg';
+      const path = `${orgId}/${sessionId}/${i + 1}.${ext}`;
+      const { error: upErr } = await sb.storage.from('intake-temp').upload(path, p.file, { upsert: true });
+      if (!upErr) {
+        await sb.from('intake_media').insert({
+          intake_session_id: sessionId,
+          storage_path: path,
+          storage_bucket: 'intake-temp',
+          mime_type: p.file.type,
+          file_size_bytes: p.file.size,
+          original_filename: p.file.name,
+          upload_order: i + 1
+        });
+      }
+    }
+
+    // Show confirmation
+    document.getElementById('intakeStep4').style.display = 'none';
+    document.getElementById('intakeStep5').style.display = '';
+    document.getElementById('confirmSessionId').textContent = sessionId.substring(0, 8) + '…';
+    toast('Request submitted!', 'success');
+  } catch (err) {
+    console.error(err);
+    toast(err.message || 'Submission failed', 'error');
+    btn.disabled = false;
+    btn.textContent = 'Submit Request';
+  }
+}
+
+function resetIntake() {
+  intakeData = { trade: null, urgency: null, photos: [] };
+  document.querySelectorAll('.trade-pill, .urgency-pill').forEach(p => p.classList.remove('selected'));
+  ['intakeName','intakePhone','intakeEmail','intakeAddress','intakeDesc'].forEach(id => {
+    document.getElementById(id).value = '';
+  });
+  document.getElementById('photoGrid').innerHTML = '';
+  for (let i = 2; i <= 5; i++) document.getElementById('intakeStep' + i).style.display = 'none';
+  document.getElementById('intakeStep1').style.display = '';
+  updateStepUI(1);
+}
+
+// ── WORK ORDERS ───────────────────────────────────────────────────────────────
+async function loadWorkOrders() {
+  const list = document.getElementById('woList');
+  list.innerHTML = '<div class="loading-overlay"><span class="spinner"></span> Loading…</div>';
+  const statusFilter = document.getElementById('woFilterStatus').value;
+  let query = sb.from('work_orders')
+    .select('id, wo_number, trade_type, status, priority, issue_summary, scheduled_at, created_at, properties(address_line1, address_city, address_state)')
+    .order('created_at', { ascending: false })
+    .limit(50);
+  if (currentOrgId) query = query.eq('organization_id', currentOrgId);
+  if (statusFilter) query = query.eq('status', statusFilter);
+  const { data, error } = await query;
+  if (error) { list.innerHTML = `<div class="empty-state"><p>${error.message}</p></div>`; return; }
+  if (!data || data.length === 0) {
+    list.innerHTML = `<div class="empty-state"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="3" y="3" width="18" height="18" rx="3"/><path d="M7 8h10M7 12h6M7 16h4" stroke-linecap="round"/></svg><p>No work orders yet</p></div>`;
+    return;
+  }
+  list.innerHTML = data.map(wo => {
+    const addr = wo.properties ? `${wo.properties.address_line1}, ${wo.properties.address_city}` : 'No address';
+    const badge = badgeForStatus(wo.status);
+    const trade = { plumbing: '🔧', electrical: '⚡', hvac: '❄️', multi: '🛠' }[wo.trade_type] || '🔧';
+    return `<div class="wo-card" onclick="openWO('${wo.id}')">
+      <div class="wo-meta">
+        <span class="wo-trade">${trade} ${wo.trade_type?.toUpperCase()} ${wo.wo_number ? '· ' + wo.wo_number : ''}</span>
+        <span class="badge ${badge.cls}">${badge.label}</span>
+      </div>
+      <div class="wo-addr">${addr}</div>
+      ${wo.issue_summary ? `<div class="wo-detail">${wo.issue_summary}</div>` : ''}
+      <div style="font-size:0.75rem;color:var(--muted);margin-top:8px;">${formatDate(wo.created_at)}</div>
+    </div>`;
+  }).join('');
+}
+
+function badgeForStatus(s) {
+  return { new: { cls: 'badge-new', label: 'New' }, scheduled: { cls: 'badge-scheduled', label: 'Scheduled' },
+    complete: { cls: 'badge-complete', label: 'Complete' }, on_site: { cls: 'badge-urgent', label: 'On Site' },
+    en_route: { cls: 'badge-scheduled', label: 'En Route' } }[s] || { cls: 'badge-new', label: s || 'New' };
+}
+
+async function openWO(id) {
+  showScreen('screenWODetail');
+  const content = document.getElementById('woDetailContent');
+  content.innerHTML = '<div class="loading-overlay"><span class="spinner"></span> Loading…</div>';
+  const { data: wo, error } = await sb.from('work_orders')
+    .select('*, properties(address_line1, address_line2, address_city, address_state, address_zip, property_type, year_built), clients(full_name, phone, email), first_trip_summaries(tech_briefing_text, safety_flags, ask_on_arrival, probable_root_causes, issue_classification)')
+    .eq('id', id).single();
+  if (error) { content.innerHTML = `<p style="color:var(--danger)">${error.message}</p>`; return; }
+  currentWO = wo;
+  const addr = wo.properties ? [wo.properties.address_line1, wo.properties.address_city, wo.properties.address_state].filter(Boolean).join(', ') : 'No address';
+  const badge = badgeForStatus(wo.status);
+  const fts = wo.first_trip_summaries?.[0];
+  const tradeIcon = { plumbing: '🔧', electrical: '⚡', hvac: '❄️', multi: '🛠' }[wo.trade_type] || '🔧';
+
+  content.innerHTML = `
+    <div class="detail-header">
+      <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:8px;">
+        <h1 style="font-size:1.25rem;">${tradeIcon} ${wo.trade_type?.toUpperCase()}</h1>
+        <span class="badge ${badge.cls}">${badge.label}</span>
+      </div>
+      <div style="font-size:0.92rem;color:var(--muted);">${addr}</div>
+      ${wo.wo_number ? `<div style="font-size:0.75rem;color:var(--muted);margin-top:4px;font-family:monospace;">WO# ${wo.wo_number}</div>` : ''}
+    </div>
+
+    <div class="detail-section">
+      <h3>Work Order Details</h3>
+      <div class="detail-row"><span class="detail-key">Priority</span><span class="detail-val">${wo.priority || '—'}</span></div>
+      <div class="detail-row"><span class="detail-key">Status</span><span class="detail-val">${wo.status || '—'}</span></div>
+      <div class="detail-row"><span class="detail-key">Scheduled</span><span class="detail-val">${wo.scheduled_at ? formatDate(wo.scheduled_at) : '—'}</span></div>
+      <div class="detail-row"><span class="detail-key">Estimate</span><span class="detail-val">${wo.quoted_low && wo.quoted_high ? '$' + wo.quoted_low + ' – $' + wo.quoted_high : '—'}</span></div>
+    </div>
+
+    ${wo.issue_summary ? `
+    <div class="detail-section">
+      <h3>Issue Summary</h3>
+      <p style="font-size:0.9rem;line-height:1.6;color:var(--text);">${wo.issue_summary}</p>
+    </div>` : ''}
+
+    ${wo.clients ? `
+    <div class="detail-section">
+      <h3>Client</h3>
+      <div class="detail-row"><span class="detail-key">Name</span><span class="detail-val">${wo.clients.full_name}</span></div>
+      <div class="detail-row"><span class="detail-key">Phone</span><span class="detail-val">${wo.clients.phone || '—'}</span></div>
+      <div class="detail-row"><span class="detail-key">Email</span><span class="detail-val">${wo.clients.email || '—'}</span></div>
+    </div>` : ''}
+
+    ${wo.properties ? `
+    <div class="detail-section">
+      <h3>Property</h3>
+      <div class="detail-row"><span class="detail-key">Type</span><span class="detail-val">${wo.properties.property_type || '—'}</span></div>
+      <div class="detail-row"><span class="detail-key">Year Built</span><span class="detail-val">${wo.properties.year_built || '—'}</span></div>
+    </div>` : ''}
+
+    ${fts ? `
+    <div class="card" style="border-color:rgba(249,115,22,0.3);background:rgba(249,115,22,0.04);margin-bottom:16px;">
+      <div class="card-title" style="color:var(--accent);">🤖 Tech Briefing</div>
+      ${fts.tech_briefing_text ? `<p style="font-size:0.9rem;line-height:1.6;margin-bottom:12px;">${fts.tech_briefing_text}</p>` : ''}
+      ${fts.safety_flags?.length ? `<div style="margin-bottom:8px;"><strong style="font-size:0.78rem;color:var(--danger);">⚠️ SAFETY FLAGS</strong><ul style="margin:6px 0 0 16px;font-size:0.85rem;color:var(--text);">${fts.safety_flags.map(f => `<li>${typeof f === 'object' ? JSON.stringify(f) : f}</li>`).join('')}</ul></div>` : ''}
+      ${fts.ask_on_arrival?.length ? `<div><strong style="font-size:0.78rem;color:var(--muted);">Ask on Arrival</strong><ul style="margin:6px 0 0 16px;font-size:0.85rem;color:var(--text);">${fts.ask_on_arrival.map(q => `<li>${typeof q === 'object' ? JSON.stringify(q) : q}</li>`).join('')}</ul></div>` : ''}
+    </div>` : ''}
+
+    <div class="btn-row" style="margin-top:8px;">
+      <button class="btn btn-secondary" onclick="updateWOStatus('${wo.id}', 'en_route')">En Route</button>
+      <button class="btn btn-primary" onclick="updateWOStatus('${wo.id}', 'on_site')">On Site</button>
+    </div>
+    <button class="btn btn-blue" onclick="updateWOStatus('${wo.id}', 'complete')" style="margin-top:8px;">Mark Complete</button>
+  `;
+}
+
+async function updateWOStatus(id, status) {
+  const { error } = await sb.from('work_orders').update({ status, updated_at: new Date().toISOString() }).eq('id', id);
+  if (error) toast(error.message, 'error');
+  else { toast('Status updated → ' + status, 'success'); openWO(id); }
+}
+
+// ── INTAKE QUEUE (staff) ──────────────────────────────────────────────────────
+async function loadQueue() {
+  const list = document.getElementById('queueList');
+  list.innerHTML = '<div class="loading-overlay"><span class="spinner"></span> Loading…</div>';
+  let query = sb.from('intake_sessions')
+    .select('id, trade_type, status, homeowner_name, homeowner_phone, address_raw, urgency_self_reported, homeowner_description, created_at')
+    .in('status', ['open', 'triaged'])
+    .order('created_at', { ascending: false })
+    .limit(30);
+  if (currentOrgId) query = query.eq('organization_id', currentOrgId);
+  const { data, error } = await query;
+  if (error) { list.innerHTML = `<div class="empty-state"><p>${error.message}</p></div>`; return; }
+  if (!data || data.length === 0) {
+    list.innerHTML = `<div class="empty-state"><p>No open intake sessions</p></div>`;
+    return;
+  }
+  const urgColors = { emergency: 'var(--danger)', urgent: 'var(--accent)', routine: 'var(--accent2)', planning: 'var(--muted)' };
+  list.innerHTML = data.map(s => `
+    <div class="wo-card">
+      <div class="wo-meta">
+        <span style="font-size:0.78rem;color:var(--muted);">${s.trade_type?.toUpperCase()}</span>
+        <span style="font-size:0.75rem;font-weight:600;color:${urgColors[s.urgency_self_reported] || 'var(--muted)'}">${s.urgency_self_reported?.toUpperCase() || 'UNKNOWN'}</span>
+      </div>
+      <div class="wo-addr">${s.homeowner_name || 'Anonymous'} · ${s.homeowner_phone || '—'}</div>
+      <div class="wo-trade">${s.address_raw || 'No address'}</div>
+      ${s.homeowner_description ? `<div class="wo-detail">${s.homeowner_description}</div>` : ''}
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-top:10px;">
+        <span style="font-size:0.72rem;color:var(--muted);">${formatDate(s.created_at)}</span>
+        <button class="btn btn-sm btn-blue" onclick="convertToWO('${s.id}')">→ Work Order</button>
+      </div>
+    </div>`
+  ).join('');
+}
+
+async function convertToWO(sessionId) {
+  toast('Creating work order…');
+  const { data: session } = await sb.from('intake_sessions').select('*').eq('id', sessionId).single();
+  if (!session) { toast('Session not found', 'error'); return; }
+  const { data: wo, error } = await sb.from('work_orders').insert({
+    organization_id: session.organization_id || currentOrgId,
+    trade_type: session.trade_type,
+    intake_session_id: sessionId,
+    issue_summary: session.homeowner_description,
+    priority: session.urgency_self_reported || 'routine',
+    status: 'new'
+  }).select('id').single();
+  if (error) { toast(error.message, 'error'); return; }
+  await sb.from('intake_sessions').update({ status: 'converted' }).eq('id', sessionId);
+  toast('Work order created!', 'success');
+  loadQueue();
+}
+
+// ── PROFILE ───────────────────────────────────────────────────────────────────
+async function loadProfile() {
+  if (!currentUser) return;
+  const card = document.getElementById('profileCard');
+  const { data: profile } = await sb.from('profiles').select('*').eq('id', currentUser.id).single();
+  const rows = [
+    ['Email', currentUser.email || '(anonymous)'],
+    ['Role', profile?.role || currentRole],
+    ['Name', profile?.full_name || '—'],
+    ['Phone', profile?.phone || '—'],
+    ['Org ID', (currentOrgId || '—').substring(0, 12) + '…'],
+  ];
+  card.innerHTML = rows.map(([k, v]) =>
+    `<div class="detail-row"><span class="detail-key">${k}</span><span class="detail-val">${v}</span></div>`
+  ).join('');
+}
+
+// ── UTILS ─────────────────────────────────────────────────────────────────────
+function formatDate(d) {
+  if (!d) return '—';
+  const dt = new Date(d);
+  return dt.toLocaleDateString('en-US', { month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit' });
+}
+
+let toastTimer;
+function toast(msg, type = '') {
+  const el = document.getElementById('toast');
+  el.textContent = msg;
+  el.className = 'show' + (type ? ' ' + type : '');
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(() => el.classList.remove('show'), 3000);
+}
+
+// ── BOOT ──────────────────────────────────────────────────────────────────────
+init();
+</script>
+</body>
+</html>
