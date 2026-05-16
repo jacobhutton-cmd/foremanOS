@@ -7,39 +7,44 @@
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <style>
     :root {
-      --bg: #0f1117;
-      --surface: #1a1d27;
-      --border: #2a2d3a;
-      --accent: #f97316;
-      --accent2: #3b82f6;
-      --text: #e2e8f0;
-      --muted: #64748b;
-      --danger: #ef4444;
-      --success: #22c55e;
+      --bg: #050810;
+      --surface: #0d1117;
+      --surface2: #131920;
+      --border: #1e2a38;
+      --accent: #00e5ff;
+      --accent-dim: rgba(0,229,255,0.12);
+      --accent2: #7c3aed;
+      --accent2-dim: rgba(124,58,237,0.12);
+      --accent3: #10b981;
+      --text: #e6edf3;
+      --muted: #5a7490;
+      --danger: #f43f5e;
+      --success: #10b981;
       --radius: 12px;
+      --glow: 0 0 20px rgba(0,229,255,0.08);
     }
     * { box-sizing: border-box; margin: 0; padding: 0; }
     body { background: var(--bg); color: var(--text); font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; min-height: 100vh; }
     #app { max-width: 480px; margin: 0 auto; padding: 0 0 80px; }
 
     /* NAV */
-    nav { background: var(--surface); border-bottom: 1px solid var(--border); padding: 14px 20px; display: flex; align-items: center; justify-content: space-between; position: sticky; top: 0; z-index: 100; }
-    .nav-logo { font-size: 1.1rem; font-weight: 700; color: var(--accent); letter-spacing: 0.04em; }
-    .nav-role { font-size: 0.75rem; color: var(--muted); background: var(--border); padding: 3px 10px; border-radius: 99px; }
+    nav { background: var(--surface); border-bottom: 1px solid var(--border); padding: 14px 20px; display: flex; align-items: center; justify-content: space-between; position: sticky; top: 0; z-index: 100; backdrop-filter: blur(12px); }
+    .nav-logo { font-size: 1.1rem; font-weight: 800; color: var(--accent); letter-spacing: 0.06em; text-shadow: 0 0 14px rgba(0,229,255,0.45); }
+    .nav-role { font-size: 0.75rem; color: var(--accent); background: var(--accent-dim); padding: 3px 10px; border-radius: 99px; border: 1px solid rgba(0,229,255,0.2); }
 
     /* SCREENS */
     .screen { display: none; padding: 24px 20px; }
     .screen.active { display: block; }
 
     /* BOTTOM NAV */
-    .bottom-nav { position: fixed; bottom: 0; left: 0; right: 0; background: var(--surface); border-top: 1px solid var(--border); display: flex; justify-content: space-around; padding: 10px 0 14px; z-index: 100; }
+    .bottom-nav { position: fixed; bottom: 0; left: 0; right: 0; background: var(--surface); border-top: 1px solid var(--border); display: flex; justify-content: space-around; padding: 10px 0 14px; z-index: 100; backdrop-filter: blur(12px); }
     .bottom-nav.hidden { display: none; }
     .bnav-btn { background: none; border: none; color: var(--muted); font-size: 0.7rem; display: flex; flex-direction: column; align-items: center; gap: 4px; cursor: pointer; padding: 4px 14px; border-radius: 8px; transition: color 0.15s; }
     .bnav-btn.active { color: var(--accent); }
     .bnav-btn svg { width: 22px; height: 22px; }
 
     /* CARDS */
-    .card { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 20px; margin-bottom: 16px; }
+    .card { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 20px; margin-bottom: 16px; box-shadow: var(--glow); }
     .card-title { font-size: 0.75rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.08em; color: var(--muted); margin-bottom: 12px; }
 
     /* HEADINGS */
@@ -49,30 +54,33 @@
 
     /* FORMS */
     label { display: block; font-size: 0.8rem; font-weight: 600; color: var(--muted); margin-bottom: 6px; text-transform: uppercase; letter-spacing: 0.05em; }
-    input, textarea, select { width: 100%; background: var(--bg); border: 1px solid var(--border); border-radius: 8px; color: var(--text); font-size: 0.95rem; padding: 12px 14px; margin-bottom: 16px; outline: none; font-family: inherit; transition: border-color 0.15s; }
-    input:focus, textarea:focus, select:focus { border-color: var(--accent); }
+    input, textarea, select { width: 100%; background: var(--surface2); border: 1px solid var(--border); border-radius: 8px; color: var(--text); font-size: 0.95rem; padding: 12px 14px; margin-bottom: 16px; outline: none; font-family: inherit; transition: border-color 0.2s, box-shadow 0.2s; }
+    input:focus, textarea:focus, select:focus { border-color: var(--accent); box-shadow: 0 0 0 3px rgba(0,229,255,0.1); }
+    input:disabled, textarea:disabled, select:disabled { opacity: 0.4; cursor: not-allowed; }
     textarea { resize: vertical; min-height: 90px; }
     select option { background: var(--surface); }
 
     /* BUTTONS */
-    .btn { display: block; width: 100%; padding: 14px; border-radius: 10px; font-size: 0.95rem; font-weight: 600; cursor: pointer; border: none; transition: opacity 0.15s, transform 0.1s; text-align: center; }
+    .btn { display: block; width: 100%; padding: 14px; border-radius: 10px; font-size: 0.95rem; font-weight: 600; cursor: pointer; border: none; transition: opacity 0.15s, transform 0.1s, box-shadow 0.15s; text-align: center; }
     .btn:active { transform: scale(0.98); }
-    .btn-primary { background: var(--accent); color: #fff; }
-    .btn-secondary { background: var(--border); color: var(--text); }
-    .btn-blue { background: var(--accent2); color: #fff; }
+    .btn-primary { background: var(--accent); color: #050810; box-shadow: 0 0 18px rgba(0,229,255,0.25); }
+    .btn-primary:hover { box-shadow: 0 0 28px rgba(0,229,255,0.4); }
+    .btn-secondary { background: var(--surface2); color: var(--text); border: 1px solid var(--border); }
+    .btn-blue { background: var(--accent2); color: #fff; box-shadow: 0 0 18px rgba(124,58,237,0.25); }
+    .btn-blue:hover { box-shadow: 0 0 28px rgba(124,58,237,0.4); }
     .btn:disabled { opacity: 0.45; cursor: not-allowed; }
     .btn-sm { width: auto; display: inline-block; padding: 8px 16px; font-size: 0.82rem; }
     .btn-row { display: flex; gap: 10px; margin-bottom: 16px; }
 
     /* TRADE PILLS */
     .trade-pills { display: flex; gap: 10px; flex-wrap: wrap; margin-bottom: 20px; }
-    .trade-pill { flex: 1; min-width: 80px; padding: 12px 8px; border-radius: 10px; border: 2px solid var(--border); background: var(--surface); color: var(--muted); font-size: 0.82rem; font-weight: 600; text-align: center; cursor: pointer; transition: all 0.15s; }
-    .trade-pill.selected { border-color: var(--accent); color: var(--accent); background: rgba(249,115,22,0.08); }
+    .trade-pill { flex: 1; min-width: 80px; padding: 12px 8px; border-radius: 10px; border: 2px solid var(--border); background: var(--surface2); color: var(--muted); font-size: 0.82rem; font-weight: 600; text-align: center; cursor: pointer; transition: all 0.15s; }
+    .trade-pill.selected { border-color: var(--accent); color: var(--accent); background: var(--accent-dim); box-shadow: 0 0 12px rgba(0,229,255,0.15); }
 
     /* URGENCY PILLS */
     .urgency-pills { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 20px; }
-    .urgency-pill { flex: 1; min-width: 70px; padding: 10px 6px; border-radius: 8px; border: 2px solid var(--border); background: var(--surface); color: var(--muted); font-size: 0.78rem; font-weight: 600; text-align: center; cursor: pointer; transition: all 0.15s; }
-    .urgency-pill.selected { border-color: var(--accent2); color: var(--accent2); background: rgba(59,130,246,0.08); }
+    .urgency-pill { flex: 1; min-width: 70px; padding: 10px 6px; border-radius: 8px; border: 2px solid var(--border); background: var(--surface2); color: var(--muted); font-size: 0.78rem; font-weight: 600; text-align: center; cursor: pointer; transition: all 0.15s; }
+    .urgency-pill.selected { border-color: var(--accent2); color: #a78bfa; background: var(--accent2-dim); }
 
     /* PHOTO UPLOAD */
     .photo-upload-area { border: 2px dashed var(--border); border-radius: var(--radius); padding: 32px 20px; text-align: center; cursor: pointer; transition: border-color 0.15s; margin-bottom: 16px; position: relative; }
@@ -81,27 +89,27 @@
     .photo-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; margin-bottom: 16px; }
     .photo-thumb { aspect-ratio: 1; border-radius: 8px; object-fit: cover; width: 100%; }
     .photo-thumb-wrap { position: relative; }
-    .photo-remove { position: absolute; top: 4px; right: 4px; background: rgba(0,0,0,0.7); border: none; color: #fff; border-radius: 99px; width: 22px; height: 22px; font-size: 13px; cursor: pointer; display: flex; align-items: center; justify-content: center; }
+    .photo-remove { position: absolute; top: 4px; right: 4px; background: rgba(0,0,0,0.75); border: none; color: #fff; border-radius: 99px; width: 22px; height: 22px; font-size: 13px; cursor: pointer; display: flex; align-items: center; justify-content: center; }
 
     /* STEPS */
     .steps { display: flex; align-items: center; gap: 0; margin-bottom: 28px; }
     .step { flex: 1; text-align: center; font-size: 0.7rem; color: var(--muted); position: relative; }
     .step-dot { width: 28px; height: 28px; border-radius: 99px; border: 2px solid var(--border); background: var(--bg); display: flex; align-items: center; justify-content: center; margin: 0 auto 4px; font-size: 0.75rem; font-weight: 700; color: var(--muted); }
-    .step.done .step-dot { background: var(--success); border-color: var(--success); color: #fff; }
-    .step.active .step-dot { border-color: var(--accent); color: var(--accent); }
+    .step.done .step-dot { background: var(--success); border-color: var(--success); color: #050810; }
+    .step.active .step-dot { border-color: var(--accent); color: var(--accent); box-shadow: 0 0 10px rgba(0,229,255,0.3); }
     .step-line { height: 2px; background: var(--border); flex: 1; margin-bottom: 20px; }
     .step-line.done { background: var(--success); }
 
     /* STATUS BADGE */
     .badge { display: inline-block; padding: 3px 10px; border-radius: 99px; font-size: 0.72rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.05em; }
-    .badge-new { background: rgba(59,130,246,0.15); color: var(--accent2); }
-    .badge-scheduled { background: rgba(249,115,22,0.15); color: var(--accent); }
-    .badge-complete { background: rgba(34,197,94,0.15); color: var(--success); }
-    .badge-urgent { background: rgba(239,68,68,0.15); color: var(--danger); }
+    .badge-new { background: var(--accent2-dim); color: #a78bfa; }
+    .badge-scheduled { background: rgba(0,229,255,0.1); color: var(--accent); }
+    .badge-complete { background: rgba(16,185,129,0.12); color: var(--success); }
+    .badge-urgent { background: rgba(244,63,94,0.12); color: var(--danger); }
 
     /* WO CARD */
-    .wo-card { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 16px; margin-bottom: 12px; cursor: pointer; transition: border-color 0.15s; }
-    .wo-card:hover { border-color: var(--accent2); }
+    .wo-card { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 16px; margin-bottom: 12px; cursor: pointer; transition: border-color 0.15s, box-shadow 0.15s; }
+    .wo-card:hover { border-color: var(--accent); box-shadow: 0 0 14px rgba(0,229,255,0.08); }
     .wo-meta { display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; }
     .wo-addr { font-size: 0.95rem; font-weight: 600; margin-bottom: 4px; }
     .wo-trade { font-size: 0.78rem; color: var(--muted); }
@@ -131,21 +139,31 @@
 
     /* AUTH */
     .auth-wrap { min-height: 100vh; display: flex; flex-direction: column; justify-content: center; padding: 40px 24px; max-width: 400px; margin: 0 auto; }
-    .auth-logo { font-size: 2rem; font-weight: 800; color: var(--accent); letter-spacing: 0.05em; margin-bottom: 8px; }
+    .auth-logo { font-size: 2.2rem; font-weight: 900; color: var(--accent); letter-spacing: 0.06em; margin-bottom: 4px; text-shadow: 0 0 24px rgba(0,229,255,0.5); }
     .auth-tagline { color: var(--muted); font-size: 0.92rem; margin-bottom: 40px; line-height: 1.5; }
-    .tab-row { display: flex; gap: 0; border: 1px solid var(--border); border-radius: 10px; margin-bottom: 24px; overflow: hidden; }
+    .tab-row { display: flex; gap: 0; border: 1px solid var(--border); border-radius: 10px; margin-bottom: 24px; overflow: hidden; background: var(--surface2); }
     .tab-btn { flex: 1; padding: 11px; background: none; border: none; color: var(--muted); font-size: 0.88rem; font-weight: 600; cursor: pointer; transition: all 0.15s; }
-    .tab-btn.active { background: var(--accent); color: #fff; }
+    .tab-btn.active { background: var(--accent); color: #050810; }
     .divider { text-align: center; color: var(--muted); font-size: 0.8rem; margin: 16px 0; position: relative; }
     .divider::before, .divider::after { content: ''; position: absolute; top: 50%; width: 42%; height: 1px; background: var(--border); }
     .divider::before { left: 0; }
     .divider::after { right: 0; }
 
+    /* MAGIC LINK SENT STATE */
+    .magic-sent-box { background: var(--accent-dim); border: 1px solid rgba(0,229,255,0.25); border-radius: var(--radius); padding: 20px; text-align: center; margin-bottom: 16px; }
+    .magic-sent-box .icon { font-size: 2rem; margin-bottom: 8px; }
+    .magic-sent-box h3 { color: var(--accent); margin-bottom: 6px; font-size: 1rem; }
+    .magic-sent-box p { color: var(--muted); font-size: 0.85rem; line-height: 1.5; }
+
     /* INTAKE CONFIRM */
-    .confirm-box { background: rgba(34,197,94,0.07); border: 1px solid rgba(34,197,94,0.25); border-radius: var(--radius); padding: 24px; text-align: center; margin-bottom: 20px; }
+    .confirm-box { background: rgba(16,185,129,0.07); border: 1px solid rgba(16,185,129,0.25); border-radius: var(--radius); padding: 24px; text-align: center; margin-bottom: 20px; }
     .confirm-icon { font-size: 2.5rem; margin-bottom: 8px; }
     .confirm-box h2 { color: var(--success); margin-bottom: 8px; }
     .confirm-box p { color: var(--muted); font-size: 0.88rem; line-height: 1.5; }
+
+    /* SCAN LINE ANIMATION on logo */
+    @keyframes scanline { 0%,100% { opacity: 0.6; } 50% { opacity: 1; } }
+    .auth-logo { animation: scanline 3s ease-in-out infinite; }
   </style>
 </head>
 <body>
@@ -159,26 +177,38 @@
   <div id="screenAuth" style="display:none; padding:0;">
     <div class="auth-wrap">
       <div class="auth-logo">ForemanOS</div>
-      <p class="auth-tagline">Intelligent dispatch & diagnostics for independent trade contractors.</p>
+      <p class="auth-tagline">Intelligent dispatch &amp; diagnostics for independent trade contractors.</p>
       <div class="tab-row">
         <button class="tab-btn active" id="tabStaff" onclick="switchAuthTab('staff')">Staff Login</button>
         <button class="tab-btn" id="tabClient" onclick="switchAuthTab('client')">Client Intake</button>
       </div>
+
+      <!-- STAFF FORM -->
       <div id="authStaffForm">
-        <label>Email</label>
-        <input type="email" id="authEmail" placeholder="you@example.com" />
-        <button class="btn btn-primary" id="btnMagicLink" onclick="sendMagicLink()">Send Magic Link</button>
-        <div class="divider">or</div>
-        <label>Password</label>
-        <input type="password" id="authPassword" placeholder="••••••••" />
-        <div class="btn-row">
-          <button class="btn btn-secondary" onclick="signIn()">Sign In</button>
-          <button class="btn btn-blue" onclick="signUp()">Sign Up</button>
+        <div id="magicLinkSentBox" style="display:none;" class="magic-sent-box">
+          <div class="icon">✉️</div>
+          <h3>Check your inbox</h3>
+          <p>A magic link was sent to <strong id="magicLinkEmail"></strong>. Click the link in your email and you'll be signed in automatically.</p>
+        </div>
+        <div id="staffInputs">
+          <label>Email</label>
+          <input type="email" id="authEmail" placeholder="you@yourcompany.com" />
+          <button class="btn btn-primary" id="btnMagicLink" onclick="sendMagicLink()">Send Magic Link →</button>
+          <div class="divider">or sign in with password</div>
+          <label>Password</label>
+          <input type="password" id="authPassword" placeholder="••••••••" />
+          <div class="btn-row">
+            <button class="btn btn-secondary" onclick="signIn()">Sign In</button>
+            <button class="btn btn-blue" onclick="signUp()">Sign Up</button>
+          </div>
         </div>
       </div>
+
+      <!-- CLIENT FORM -->
       <div id="authClientForm" style="display:none;">
         <p style="color:var(--muted);font-size:0.88rem;margin-bottom:20px;line-height:1.5;">No account needed. We'll create a temporary session so you can describe your issue and upload photos.</p>
-        <button class="btn btn-primary" onclick="startAnonIntake()">Start Intake →</button>
+        <button class="btn btn-primary" id="btnAnonIntake" onclick="startAnonIntake()">Start Intake →</button>
+        <p id="anonStatusMsg" style="display:none;text-align:center;color:var(--muted);font-size:0.82rem;margin-top:12px;"><span class="spinner"></span> Creating session…</p>
       </div>
     </div>
   </div>
@@ -205,13 +235,13 @@
         <div class="trade-pill" data-trade="multi" onclick="selectTrade(this)">🛠 Multiple</div>
       </div>
       <label>Your Name</label>
-      <input type="text" id="intakeName" placeholder="Jane Smith" />
+      <input type="text" id="intakeName" placeholder="Jane Smith" disabled />
       <label>Phone Number</label>
-      <input type="tel" id="intakePhone" placeholder="(207) 555-0123" />
+      <input type="tel" id="intakePhone" placeholder="(207) 555-0123" disabled />
       <label>Email (optional)</label>
-      <input type="email" id="intakeEmail" placeholder="jane@example.com" />
+      <input type="email" id="intakeEmail" placeholder="jane@example.com" disabled />
       <label>Property Address</label>
-      <input type="text" id="intakeAddress" placeholder="123 Main St, Naples, ME 04055" />
+      <input type="text" id="intakeAddress" placeholder="123 Main St, Naples, ME 04055" disabled />
       <button class="btn btn-primary" onclick="intakeNext(1)">Next →</button>
     </div>
 
@@ -296,7 +326,7 @@
 
   <!-- WO DETAIL SCREEN -->
   <div id="screenWODetail" class="screen">
-    <button onclick="showScreen('screenOrders')" style="background:none;border:none;color:var(--accent2);font-size:0.88rem;cursor:pointer;margin-bottom:16px;">← Back to Orders</button>
+    <button onclick="showScreen('screenOrders')" style="background:none;border:none;color:var(--accent);font-size:0.88rem;cursor:pointer;margin-bottom:16px;">← Back to Orders</button>
     <div id="woDetailContent"></div>
   </div>
 
@@ -352,30 +382,49 @@ let currentWO = null;
 
 // ── INIT ──────────────────────────────────────────────────────────────────────
 async function init() {
+  // Register the onAuthStateChange listener FIRST — it handles magic link redirects
+  sb.auth.onAuthStateChange(async (event, session) => {
+    if (event === 'SIGNED_IN' && session) {
+      await onSignedIn(session.user);
+    }
+    if (event === 'SIGNED_OUT') {
+      showAuthScreen();
+    }
+  });
+
+  // Then check for an existing session (handles page refreshes)
   const { data: { session } } = await sb.auth.getSession();
   if (session) {
     await onSignedIn(session.user);
   } else {
     showAuthScreen();
   }
-  sb.auth.onAuthStateChange(async (event, session) => {
-    if (event === 'SIGNED_IN' && session) await onSignedIn(session.user);
-    if (event === 'SIGNED_OUT') showAuthScreen();
-  });
 }
 
 async function onSignedIn(user) {
   currentUser = user;
   const isAnon = user.is_anonymous;
+
   if (isAnon) {
     currentRole = 'client';
     document.getElementById('navRole').textContent = 'Client';
     document.getElementById('bottomNav').classList.add('hidden');
+    // ── Unlock intake form fields now that we have a valid session ──
+    ['intakeName','intakePhone','intakeEmail','intakeAddress'].forEach(id => {
+      const el = document.getElementById(id);
+      if (el) el.disabled = false;
+    });
+    document.getElementById('screenAuth').style.display = 'none';
     showScreen('screenIntake');
     return;
   }
-  // fetch profile
-  const { data: profile } = await sb.from('profiles').select('role, organization_id, full_name').eq('id', user.id).single();
+
+  // ── Staff: fetch profile then redirect to dashboard ──
+  const { data: profile } = await sb.from('profiles')
+    .select('role, organization_id, full_name')
+    .eq('id', user.id)
+    .single();
+
   if (profile) {
     currentRole = profile.role || 'tech';
     currentOrgId = profile.organization_id;
@@ -384,6 +433,8 @@ async function onSignedIn(user) {
     currentRole = 'tech';
     document.getElementById('navRole').textContent = user.email?.split('@')[0] || 'Staff';
   }
+
+  document.getElementById('screenAuth').style.display = 'none';
   document.getElementById('bottomNav').classList.remove('hidden');
   showScreen('screenOrders');
   loadWorkOrders();
@@ -391,6 +442,8 @@ async function onSignedIn(user) {
 }
 
 function showAuthScreen() {
+  currentUser = null;
+  currentRole = 'guest';
   document.getElementById('screenAuth').style.display = '';
   document.getElementById('bottomNav').classList.add('hidden');
   document.getElementById('navRole').textContent = 'Sign In';
@@ -407,15 +460,33 @@ function switchAuthTab(tab) {
   document.getElementById('authClientForm').style.display = tab === 'client' ? '' : 'none';
 }
 
+// ── SEND MAGIC LINK ──────────────────────────────────────────────────────────
+// onAuthStateChange will detect SIGNED_IN when the user clicks the link
+// and automatically call onSignedIn → redirect to Staff Dashboard.
 async function sendMagicLink() {
   const email = document.getElementById('authEmail').value.trim();
-  if (!email) { toast('Enter your email', 'error'); return; }
+  if (!email) { toast('Enter your email address', 'error'); return; }
   const btn = document.getElementById('btnMagicLink');
-  btn.disabled = true; btn.textContent = 'Sending…';
-  const { error } = await sb.auth.signInWithOtp({ email, options: { emailRedirectTo: location.href } });
-  btn.disabled = false; btn.textContent = 'Send Magic Link';
-  if (error) toast(error.message, 'error');
-  else toast('✉️ Magic link sent — check your email', 'success');
+  btn.disabled = true;
+  btn.textContent = 'Sending…';
+
+  const { error } = await sb.auth.signInWithOtp({
+    email,
+    options: { emailRedirectTo: location.origin + location.pathname }
+  });
+
+  btn.disabled = false;
+  btn.textContent = 'Send Magic Link →';
+
+  if (error) {
+    toast(error.message, 'error');
+    return;
+  }
+
+  // Show the "check your inbox" state — listener handles the rest automatically
+  document.getElementById('staffInputs').style.display = 'none';
+  document.getElementById('magicLinkEmail').textContent = email;
+  document.getElementById('magicLinkSentBox').style.display = '';
 }
 
 async function signIn() {
@@ -435,9 +506,24 @@ async function signUp() {
   else toast('Account created — check your email to confirm', 'success');
 }
 
+// ── ANONYMOUS INTAKE ─────────────────────────────────────────────────────────
+// Calls signInAnonymously, then onAuthStateChange fires SIGNED_IN
+// which calls onSignedIn → unlocks fields → navigates to intake screen.
 async function startAnonIntake() {
-  const { error } = await sb.auth.signInAnonymously();
-  if (error) toast(error.message, 'error');
+  const btn = document.getElementById('btnAnonIntake');
+  const statusMsg = document.getElementById('anonStatusMsg');
+  btn.disabled = true;
+  statusMsg.style.display = '';
+
+  const { data, error } = await sb.auth.signInAnonymously();
+
+  if (error) {
+    btn.disabled = false;
+    statusMsg.style.display = 'none';
+    toast(error.message, 'error');
+    return;
+  }
+  // onAuthStateChange will fire SIGNED_IN and handle the navigation + field unlock
 }
 
 async function signOut() {
@@ -447,8 +533,7 @@ async function signOut() {
 // ── SCREEN ROUTING ────────────────────────────────────────────────────────────
 function showScreen(id) {
   ['screenIntake','screenOrders','screenQueue','screenProfile','screenWODetail'].forEach(s => {
-    const el = document.getElementById(s);
-    el.classList.remove('active');
+    document.getElementById(s).classList.remove('active');
   });
   document.getElementById('screenAuth').style.display = 'none';
   document.getElementById(id).classList.add('active');
@@ -488,9 +573,6 @@ function intakeNext(from) {
     if (!desc) { toast('Describe the issue', 'error'); return; }
     intakeData.description = desc;
     if (!intakeData.urgency) { toast('Select urgency level', 'error'); return; }
-  }
-  if (from === 3) {
-    // photos optional
   }
   if (from === 4) return;
   const next = from + 1;
@@ -573,17 +655,12 @@ async function submitIntake() {
   btn.innerHTML = '<span class="spinner"></span>Submitting…';
 
   try {
-    // Ensure we have an org — use a default/demo org if user is anon
-    // In production, org_id would come from the URL slug or user's org
     let orgId = currentOrgId;
     if (!orgId) {
-      // Try to get first org or create a placeholder
       const { data: orgs } = await sb.from('organizations').select('id').limit(1);
       if (orgs && orgs.length > 0) orgId = orgs[0].id;
     }
-
     if (!orgId) {
-      // Create a demo org for standalone intake
       const { data: newOrg, error: orgErr } = await sb.from('organizations').insert({
         name: 'Demo Organization',
         slug: 'demo-' + Date.now(),
@@ -593,7 +670,6 @@ async function submitIntake() {
       orgId = newOrg.id;
     }
 
-    // Create intake session
     const { data: session, error: sessErr } = await sb.from('intake_sessions').insert({
       organization_id: orgId,
       trade_type: intakeData.trade,
@@ -609,7 +685,6 @@ async function submitIntake() {
 
     const sessionId = session.id;
 
-    // Upload photos
     for (let i = 0; i < intakeData.photos.length; i++) {
       const p = intakeData.photos[i];
       const ext = p.file.name.split('.').pop() || 'jpg';
@@ -628,7 +703,6 @@ async function submitIntake() {
       }
     }
 
-    // Show confirmation
     document.getElementById('intakeStep4').style.display = 'none';
     document.getElementById('intakeStep5').style.display = '';
     document.getElementById('confirmSessionId').textContent = sessionId.substring(0, 8) + '…';
@@ -715,7 +789,6 @@ async function openWO(id) {
       <div style="font-size:0.92rem;color:var(--muted);">${addr}</div>
       ${wo.wo_number ? `<div style="font-size:0.75rem;color:var(--muted);margin-top:4px;font-family:monospace;">WO# ${wo.wo_number}</div>` : ''}
     </div>
-
     <div class="detail-section">
       <h3>Work Order Details</h3>
       <div class="detail-row"><span class="detail-key">Priority</span><span class="detail-val">${wo.priority || '—'}</span></div>
@@ -723,13 +796,11 @@ async function openWO(id) {
       <div class="detail-row"><span class="detail-key">Scheduled</span><span class="detail-val">${wo.scheduled_at ? formatDate(wo.scheduled_at) : '—'}</span></div>
       <div class="detail-row"><span class="detail-key">Estimate</span><span class="detail-val">${wo.quoted_low && wo.quoted_high ? '$' + wo.quoted_low + ' – $' + wo.quoted_high : '—'}</span></div>
     </div>
-
     ${wo.issue_summary ? `
     <div class="detail-section">
       <h3>Issue Summary</h3>
       <p style="font-size:0.9rem;line-height:1.6;color:var(--text);">${wo.issue_summary}</p>
     </div>` : ''}
-
     ${wo.clients ? `
     <div class="detail-section">
       <h3>Client</h3>
@@ -737,22 +808,19 @@ async function openWO(id) {
       <div class="detail-row"><span class="detail-key">Phone</span><span class="detail-val">${wo.clients.phone || '—'}</span></div>
       <div class="detail-row"><span class="detail-key">Email</span><span class="detail-val">${wo.clients.email || '—'}</span></div>
     </div>` : ''}
-
     ${wo.properties ? `
     <div class="detail-section">
       <h3>Property</h3>
       <div class="detail-row"><span class="detail-key">Type</span><span class="detail-val">${wo.properties.property_type || '—'}</span></div>
       <div class="detail-row"><span class="detail-key">Year Built</span><span class="detail-val">${wo.properties.year_built || '—'}</span></div>
     </div>` : ''}
-
     ${fts ? `
-    <div class="card" style="border-color:rgba(249,115,22,0.3);background:rgba(249,115,22,0.04);margin-bottom:16px;">
+    <div class="card" style="border-color:rgba(0,229,255,0.2);background:rgba(0,229,255,0.03);margin-bottom:16px;">
       <div class="card-title" style="color:var(--accent);">🤖 Tech Briefing</div>
       ${fts.tech_briefing_text ? `<p style="font-size:0.9rem;line-height:1.6;margin-bottom:12px;">${fts.tech_briefing_text}</p>` : ''}
       ${fts.safety_flags?.length ? `<div style="margin-bottom:8px;"><strong style="font-size:0.78rem;color:var(--danger);">⚠️ SAFETY FLAGS</strong><ul style="margin:6px 0 0 16px;font-size:0.85rem;color:var(--text);">${fts.safety_flags.map(f => `<li>${typeof f === 'object' ? JSON.stringify(f) : f}</li>`).join('')}</ul></div>` : ''}
       ${fts.ask_on_arrival?.length ? `<div><strong style="font-size:0.78rem;color:var(--muted);">Ask on Arrival</strong><ul style="margin:6px 0 0 16px;font-size:0.85rem;color:var(--text);">${fts.ask_on_arrival.map(q => `<li>${typeof q === 'object' ? JSON.stringify(q) : q}</li>`).join('')}</ul></div>` : ''}
     </div>` : ''}
-
     <div class="btn-row" style="margin-top:8px;">
       <button class="btn btn-secondary" onclick="updateWOStatus('${wo.id}', 'en_route')">En Route</button>
       <button class="btn btn-primary" onclick="updateWOStatus('${wo.id}', 'on_site')">On Site</button>
@@ -788,7 +856,7 @@ async function loadQueue() {
     <div class="wo-card">
       <div class="wo-meta">
         <span style="font-size:0.78rem;color:var(--muted);">${s.trade_type?.toUpperCase()}</span>
-        <span style="font-size:0.75rem;font-weight:600;color:${urgColors[s.urgency_self_reported] || 'var(--muted)'}">${s.urgency_self_reported?.toUpperCase() || 'UNKNOWN'}</span>
+        <span style="font-size:0.75rem;font-weight:600;color:${urgColors[s.urgency_self_reported] || 'var(--muted)'};">${s.urgency_self_reported?.toUpperCase() || 'UNKNOWN'}</span>
       </div>
       <div class="wo-addr">${s.homeowner_name || 'Anonymous'} · ${s.homeowner_phone || '—'}</div>
       <div class="wo-trade">${s.address_raw || 'No address'}</div>
